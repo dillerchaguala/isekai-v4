@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descargar Assets - ISEKAI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0f2d34;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #0066cc;
+            margin-bottom: 20px;
+        }
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .download-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            transition: background-color 0.2s;
+        }
+        .download-item:hover {
+            background: #e9ecef;
+        }
+        .download-link {
+            text-decoration: none;
+            color: #0066cc;
+            font-weight: 500;
+            flex: 1;
+            padding: 8px;
+        }
+        .download-link:hover {
+            color: #004499;
+            text-decoration: underline;
+        }
+        .file-type {
+            background: #6c757d;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-left: 10px;
+            min-width: 35px;
+            text-align: center;
+        }
+        .png { background: #28a745; }
+        .svg { background: #17a2b8; }
+        .download-all-btn {
+            background: #0f2d34;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+            transition: background-color 0.2s;
+        }
+        .download-all-btn:hover {
+            background: #1a4a54;
+        }
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .warning { background: #fff3cd; color: #856404; }
+        .error { background: #f8d7da; color: #721c24; }
+        .zip-section {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .zip-btn {
+            background: #ffc107;
+            color: #212529;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+        .zip-btn:hover {
+            background: #e0a800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Descargar Assets del Proyecto ISEKAI</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instrucciones Mejoradas:</h3>
+            <ol>
+                <li><strong>Método recomendado:</strong> Haz clic derecho en cada archivo → "Guardar enlace como..." o "Save link as..."</li>
+                <li><strong>Descarga automática:</strong> Usa el botón "Descargar Uno por Uno" (más lento pero más confiable)</li>
+                <li><strong>Organización:</strong> Crea una carpeta llamada "public" en tu proyecto y coloca todos los archivos ahí</li>
+                <li><strong>Importante:</strong> Mantén los nombres exactos de los archivos</li>
+            </ol>
+        </div>
+
+        <div class="zip-section">
+            <h3>💡 Consejo: Descarga Manual</h3>
+            <p>Si las descargas automáticas no funcionan, puedes:</p>
+            <button class="zip-btn" onclick="showManualInstructions()">Ver Instrucciones Manuales</button>
+            <button class="zip-btn" onclick="copyFileList()">Copiar Lista de Archivos</button>
+        </div>
+
+        <button class="download-all-btn" onclick="downloadOneByOne()">
+            📦 Descargar Uno por Uno (Recomendado)
+        </button>
+
+        <button class="download-all-btn" onclick="downloadAllAtOnce()" style="background: #6c757d;">
+            ⚡ Descargar Todos a la Vez (Puede fallar)
+        </button>
+
+        <div class="status" id="status"></div>
+
+        <h3>📁 Lista de Assets (Total: <span id="fileCount">0</span> archivos)</h3>
+        
+        <div class="download-grid" id="downloadGrid">
+            <!-- Los enlaces se generarán aquí -->
+        </div>
+
+        <div id="manualInstructions" style="display: none; background: #f8f9fa; padding: 20px; border-radius: 5px; margin-top: 20px;">
+            <h3>📝 Instrucciones Manuales:</h3>
+            <ol>
+                <li>Haz clic derecho en cada enlace de archivo</li>
+                <li>Selecciona "Guardar enlace como..." o "Save link as..."</li>
+                <li>Guarda el archivo manteniendo el nombre original</li>
+                <li>Repite para todos los archivos</li>
+                <li>Coloca todos los archivos en una carpeta llamada "public"</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const assets = [
+            'vector.svg', 'gemas-1.png', 'line-21.svg', 'i-seka-i.svg',
+            'image-10.png', 'social-1.png', 'vector-1.svg', 'caballo-1.png',
+            'group-182.png', 'group-183.png', 'group-184.png', 'group-194.svg',
+            'group-222.png', 'group-223.png', 'group-224.png', 'group-225.png',
+            'group-226.png', 'group-227.png', 'group-228.png', 'group-229.png',
+            'group-230.png', 'group-260.png', 'group-265.svg', 'terapia-1.png',
+            'aventura-2.png', 'facebook-1.png', 'logotipos-1.png', 'superheroe-2.png',
+            'rectangle-119.png', 'rectangle-133.svg', 'rectangle-139.png',
+            'rectangle-140.png', 'rectangle-315.svg', 'rectangle-329.svg',
+            'rectangle-334.svg', 'rectangle-402.svg', 'caballero--2--1.png',
+            'rectangle-133-1.svg', 'notas-de-campo-1.png',
+            'sombrero-de-explorador--1--1.png',
+            '0bf2149a6f8748e2e8aa4d68e957e5e9-photoroom-1.png',
+            'image.png', 'image copy.png'
+        ];
+
+        function getFileExtension(filename) {
+            return filename.split('.').pop().toUpperCase();
+        }
+
+        function createDownloadLinks() {
+            const grid = document.getElementById('downloadGrid');
+            const fileCount = document.getElementById('fileCount');
+            
+            fileCount.textContent = assets.length;
+            
+            assets.forEach((asset, index) => {
+                const item = document.createElement('div');
+                item.className = 'download-item';
+                
+                const link = document.createElement('a');
+                link.href = `/${asset}`;
+                link.download = asset;
+                link.textContent = asset;
+                link.className = 'download-link';
+                
+                // Agregar evento para mostrar que se hizo clic
+                link.addEventListener('click', function() {
+                    this.style.background = '#d4edda';
+                    this.style.color = '#155724';
+                    setTimeout(() => {
+                        this.style.background = '';
+                        this.style.color = '#0066cc';
+                    }, 2000);
+                });
+                
+                const fileType = document.createElement('span');
+                const ext = getFileExtension(asset);
+                fileType.className = `file-type ${ext.toLowerCase()}`;
+                fileType.textContent = ext;
+                
+                item.appendChild(link);
+                item.appendChild(fileType);
+                grid.appendChild(item);
+            });
+        }
+
+        async function downloadOneByOne() {
+            const status = document.getElementById('status');
+            status.className = 'status warning';
+            status.textContent = '⏳ Iniciando descarga uno por uno...';
+            
+            let downloaded = 0;
+            
+            for (let i = 0; i < assets.length; i++) {
+                const asset = assets[i];
+                status.textContent = `📥 Descargando ${i + 1}/${assets.length}: ${asset}`;
+                
+                try {
+                    const link = document.createElement('a');
+                    link.href = `/${asset}`;
+                    link.download = asset;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    downloaded++;
+                    
+                    // Pausa más larga entre descargas
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                } catch (error) {
+                    console.error(`Error descargando ${asset}:`, error);
+                }
+            }
+            
+            status.className = 'status success';
+            status.innerHTML = `
+                ✅ Proceso completado:<br>
+                📥 Intentos de descarga: ${downloaded}<br>
+                <small>Revisa tu carpeta de descargas. Si algunos archivos no se descargaron, usa el método manual.</small>
+            `;
+        }
+
+        async function downloadAllAtOnce() {
+            const status = document.getElementById('status');
+            status.className = 'status warning';
+            status.textContent = '⚡ Intentando descargar todos a la vez...';
+            
+            assets.forEach((asset, index) => {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.href = `/${asset}`;
+                    link.download = asset;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }, index * 100);
+            });
+            
+            setTimeout(() => {
+                status.className = 'status warning';
+                status.innerHTML = `
+                    ⚠️ Descarga masiva iniciada<br>
+                    <small>Tu navegador puede haber bloqueado algunas descargas. Revisa tu carpeta de descargas y usa el método manual para los archivos faltantes.</small>
+                `;
+            }, 3000);
+        }
+
+        function showManualInstructions() {
+            const instructions = document.getElementById('manualInstructions');
+            instructions.style.display = instructions.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function copyFileList() {
+            const fileList = assets.join('\n');
+            navigator.clipboard.writeText(fileList).then(() => {
+                alert('Lista de archivos copiada al portapapeles');
+            }).catch(() => {
+                // Fallback para navegadores que no soportan clipboard API
+                const textArea = document.createElement('textarea');
+                textArea.value = fileList;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Lista de archivos copiada al portapapeles');
+            });
+        }
+
+        // Inicializar la página
+        document.addEventListener('DOMContentLoaded', createDownloadLinks);
+    </script>
+</body>
+</html>
