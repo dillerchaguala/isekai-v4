@@ -41,11 +41,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         // Guardar token y datos del usuario en localStorage
         localStorage.setItem('isekaiUser', JSON.stringify(data.user));
         localStorage.setItem('isekaiToken', data.token);
-        alert('Login exitoso');
-        if (onLoginSuccess) {
-          onLoginSuccess();
+        
+        // Redirigir inmediatamente según el rol
+        if (data.user.role === "admin") {
+          window.location.href = "/administrador";
         } else {
-          onClose();
+          window.location.href = "/home";
         }
       } else {
         alert(data.message || 'Error al iniciar sesión');

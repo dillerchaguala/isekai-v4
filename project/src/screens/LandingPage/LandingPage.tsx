@@ -6,6 +6,7 @@ import { Card, CardContent } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { LoginModal } from "../../components/ui/login";
 import { AppointmentModal } from "../../components/ui/AppointmentModal";
+import { Footer } from "../../components/ui/footer";
 
 export const LandingPage = (): JSX.Element => {
   const [showMapModal, setShowMapModal] = useState(false);
@@ -17,18 +18,31 @@ export const LandingPage = (): JSX.Element => {
   const [showTherapyContent, setShowTherapyContent] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const user = localStorage.getItem('isekaiUser');
+    if (user) {
+      try {
+        const userObj = JSON.parse(user);
+        setUserName(userObj.name);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
+
   // Navigation menu items con onClick
   const navItems = [
-    { text: "NOSOTROS", color: "text-[#ffef00]" },
-    { text: "SERVICIOS", color: "text-[#ffef00]" },
+    { text: "NOSOTROS", color: "text-[#ffef00]", onClick: () => navigate('/about') },
+    { text: "TIPOS DE TERAPIA", color: "text-[#ffef00]", onClick: () => navigate('/therapy-types') },
     userName
-      ? { text: `¡Hola, ${userName}!`, color: "text-yellow-400 font-bold" }
+      ? { text: `¡Hola, ${userName}!`, color: "text-yellow-400 font-bold", onClick: () => navigate('/profile') }
       : { text: "INICIAR SESION", color: "text-white", onClick: () => { setLoginMode('login'); setLoginOpen(true); } },
     userName
       ? { text: "CERRAR SESIÓN", color: "text-white font-bold", onClick: () => {
           localStorage.removeItem('isekaiUser');
           localStorage.removeItem('isekaiToken');
           setUserName(null);
+          navigate('/');
         } }
       : { text: "CREAR CUENTA", color: "text-white", onClick: () => { setLoginMode('register'); setLoginOpen(true); } },
   ];
@@ -151,21 +165,21 @@ export const LandingPage = (): JSX.Element => {
     <div className="bg-white flex flex-row justify-center w-full">
       <div className="bg-white w-full max-w-[1920px] relative">
         {/* Hero Section */}
-        <section className="relative w-full h-[1240px] bg-[url(/rectangle-119.png)] bg-cover bg-[50%_50%]">
+        <section className="relative w-full min-h-screen md:h-[1240px] bg-[url(/rectangle-119.png)] bg-cover bg-[50%_50%]">
           {/* Navigation Bar */}
-          <nav className="absolute w-full h-[121px] top-0 left-0 bg-[#0f2d34ab]">
-            <div className="flex items-center h-full px-8 w-full">
+          <nav className="absolute w-full h-auto md:h-[121px] top-0 left-0 bg-[#0f2d34ab] py-4 md:py-0">
+            <div className="flex flex-col md:flex-row items-center h-full px-4 md:px-8 w-full gap-4 md:gap-0">
               {/* Menú izquierdo */}
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
                 {navItems.slice(0,2).map((item, index) => (
                   <Button
                     key={`nav-${index}`}
                     variant="ghost"
-                    className="w-[230px] h-[62px] bg-[#d9d9d966] rounded-[20px] shadow-[5px_4px_4px_#00000040]"
+                    className="w-full md:w-[230px] h-[62px] bg-[#d9d9d966] rounded-[20px] shadow-[5px_4px_4px_#00000040]"
                     onClick={item.onClick}
                   >
                     <span
-                      className={`font-['Quicksand',Helvetica] font-bold text-xl ${item.color}`}
+                      className={`font-['Quicksand',Helvetica] font-bold text-base md:text-xl ${item.color}`}
                     >
                       {item.text}
                     </span>
@@ -173,16 +187,16 @@ export const LandingPage = (): JSX.Element => {
                 ))}
               </div>
               {/* Menú usuario a la derecha */}
-              <div className="flex items-center gap-4 ml-auto">
+              <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto md:ml-auto">
                 {navItems.slice(2).map((item, index) => (
                   <Button
                     key={`user-nav-${index}`}
                     variant="ghost"
-                    className="w-[230px] h-[62px] bg-[#d9d9d966] rounded-[20px] shadow-[5px_4px_4px_#00000040]"
+                    className="w-full md:w-[230px] h-[62px] bg-[#d9d9d966] rounded-[20px] shadow-[5px_4px_4px_#00000040]"
                     onClick={item.onClick}
                   >
                     <span
-                      className={`font-['Quicksand',Helvetica] font-bold text-xl ${item.color}`}
+                      className={`font-['Quicksand',Helvetica] font-bold text-base md:text-xl ${item.color}`}
                     >
                       {item.text}
                     </span>
@@ -196,37 +210,45 @@ export const LandingPage = (): JSX.Element => {
           {/* Icono izquierdo eliminado */}
 
           <img
-            className="absolute w-[431px] h-[154px] top-[375px] left-[746px]"
+            className="absolute w-[200px] md:w-[431px] h-auto md:h-[154px] top-[45vh] md:top-[375px] left-1/2 transform -translate-x-1/2 md:left-[746px] md:transform-none"
             alt="I SEKA i"
             src="/i-seka-i.svg"
           />
 
-          <div className="absolute w-[1534px] h-[61px] top-[570px] left-[193px] [text-shadow:0px_4px_4px_#00000040] [font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#fff557] text-6xl text-center tracking-[0] leading-normal whitespace-nowrap">
+          <div className="absolute w-full md:w-[1534px] px-4 md:px-0 h-auto md:h-[61px] top-[55vh] md:top-[570px] left-1/2 transform -translate-x-1/2 md:left-[193px] md:transform-none [text-shadow:0px_4px_4px_#00000040] [font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#fff557] text-4xl md:text-6xl text-center tracking-[0] leading-normal">
             TERAPIA GAMIFICADA
           </div>
 
           {/* Action Cards */}
-          <div className="absolute bottom-[86px] left-0 right-0 flex justify-center gap-12">
+          <div className="absolute bottom-[86px] left-0 right-0 flex flex-col md:flex-row justify-center items-center gap-8 md:gap-12 px-4 md:px-0">
             {heroActionCards.map((card, index) => (
               <Card
                 key={`action-card-${index}`}
-                className="w-[270px] h-[300px] bg-transparent border-none"
+                className="w-full max-w-[270px] h-[250px] md:h-[300px] bg-transparent border-none"
               >
                 <CardContent
                   className={`p-0 h-full bg-[url(${card.bgImage})] bg-[100%_100%] relative flex flex-col items-center justify-center`}
                 >
                   <img
-                    className="w-[130px] h-[130px] object-cover mb-10"
+                    className="w-[100px] h-[100px] md:w-[130px] md:h-[130px] object-cover mb-6 md:mb-10"
                     alt={card.alt}
                     src={card.icon}
                   />
-                  <div className="absolute bottom-11 [font-family:'Quicksand',Helvetica] font-semibold text-white text-2xl text-center">
+                  <div className="absolute bottom-8 md:bottom-11 [font-family:'Quicksand',Helvetica] font-semibold text-white text-xl md:text-2xl text-center">
                     {card.text}
                   </div>
                   {card.text === "AGENDA TU CITA" && (
                     <Button
                       className="absolute w-full h-full top-0 left-0 opacity-0 cursor-pointer"
-                      onClick={() => setAppointmentOpen(true)}
+                      onClick={() => {
+                        const user = localStorage.getItem('isekaiUser');
+                        if (!user) {
+                          setLoginMode('login');
+                          setLoginOpen(true);
+                          return;
+                        }
+                        setAppointmentOpen(true);
+                      }}
                     >
                       Agendar cita
                     </Button>
@@ -254,14 +276,14 @@ export const LandingPage = (): JSX.Element => {
         </section>
 
         {/* Packages Section */}
-        <section className="w-full flex justify-center gap-12 mt-[72px]">
+        <section className="w-full flex flex-col md:flex-row justify-center gap-8 md:gap-12 mt-[72px] px-4 md:px-0">
           {packageTiers.map((tier, index) => (
-            <div key={`tier-${index}`} className="relative w-[452px] h-[581px]">
-              {/* Background elements */}
-              <div className="absolute w-[168px] h-[158px] top-[420px] left-0 bg-[#dfa1ff] rounded-[15px] shadow-[5px_5px_4px_#0000004c]" />
-              <div className="absolute w-[168px] h-[158px] top-[423px] left-0 bg-[#dfa1ff] rounded-[15px] shadow-[5px_5px_4px_#0000004c]" />
-              <div className="absolute w-[168px] h-[158px] top-[423px] left-[284px] bg-[#dfa1ff] rounded-[15px] shadow-[5px_5px_4px_#0000004c]" />
-              <div className="absolute w-[146px] h-[137px] top-[371px] left-[220px] bg-[#dfa1ff] rounded-[15px] shadow-[5px_5px_4px_#0000004c]" />
+            <div key={`tier-${index}`} className="relative w-full md:w-[452px] h-[581px] mb-12 md:mb-0">
+              {/* Background elements - Hidden on mobile */}
+              <div className="hidden md:block absolute w-[168px] h-[158px] top-[420px] left-0 bg-[#dfa1ff] rounded-[15px] shadow-[5px_5px_4px_#0000004c]" />
+              <div className="hidden md:block absolute w-[168px] h-[158px] top-[423px] left-0 bg-[#dfa1ff] rounded-[15px] shadow-[5px_5px_4px_#0000004c]" />
+              <div className="hidden md:block absolute w-[168px] h-[158px] top-[423px] left-[284px] bg-[#dfa1ff] rounded-[15px] shadow-[5px_5px_4px_#0000004c]" />
+              <div className="hidden md:block absolute w-[146px] h-[137px] top-[371px] left-[220px] bg-[#dfa1ff] rounded-[15px] shadow-[5px_5px_4px_#0000004c]" />
 
               {/* Circle with icon */}
               <div className="absolute w-[130px] h-[130px] top-0 left-[161px] bg-[#0f2d34cc] rounded-[65px] shadow-[inset_5px_5px_5px_#00000059] flex items-center justify-center">
@@ -387,9 +409,9 @@ export const LandingPage = (): JSX.Element => {
         {/* Discover Emotional Journey Section */}
 
         {/* Discover Emotional Journey Section with Hover Effect */}
-        <section className="relative w-[1421px] h-[357px] mt-[200px] mx-auto">
+        <section className="relative w-full max-w-[1421px] min-h-[357px] mt-[100px] md:mt-[200px] mx-auto px-4 md:px-0">
           <div
-            className="absolute w-[1421px] h-[322px] top-[35px] left-0 rounded-[30px] border-[3px] border-solid border-[#9b0081] shadow-[0px_4px_4px_#00000040,inset_0px_4px_4px_#00000040] transition-colors duration-300"
+            className="relative md:absolute w-full h-auto md:h-[322px] md:top-[35px] left-0 rounded-[30px] border-[3px] border-solid border-[#9b0081] shadow-[0px_4px_4px_#00000040,inset_0px_4px_4px_#00000040] transition-colors duration-300"
             style={{ backgroundColor: undefined }}
             onMouseEnter={e => {
               e.currentTarget.style.backgroundColor = '#5c7bb7'; // azul más claro
@@ -398,14 +420,14 @@ export const LandingPage = (): JSX.Element => {
               e.currentTarget.style.backgroundColor = '';
             }}
           >
-            <CardContent className="p-12 relative">
-              <div className="[text-shadow:5px_4px_4px_#00000040] [font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#0f2d34cc] text-[34px] tracking-[0] leading-[normal]">
+            <CardContent className="p-6 md:p-12 relative">
+              <div className="[text-shadow:5px_4px_4px_#00000040] [font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#0f2d34cc] text-2xl md:text-[34px] tracking-[0] leading-[normal] text-center md:text-left mb-4">
                 DESCUBRE EL VIAJE EMOCIONAL
               </div>
 
-              <Separator className="my-6 w-[822px] h-[3px] bg-[url(/line-21.svg)]" />
+              <Separator className="my-4 md:my-6 w-full md:w-[822px] h-[3px] bg-[url(/line-21.svg)]" />
 
-              <div className="[text-shadow:5px_4px_4px_#00000040] [font-family:'Quicksand',Helvetica] font-normal text-[#030000] text-[22px] tracking-[2.20px] leading-[26.1px] max-w-[833px]">
+              <div className="[text-shadow:5px_4px_4px_#00000040] [font-family:'Quicksand',Helvetica] font-normal text-[#030000] text-lg md:text-[22px] tracking-[1.5px] md:tracking-[2.20px] leading-[24px] md:leading-[26.1px] w-full md:max-w-[833px]">
                 Es un juego terapéutico donde completas actividades para
                 desbloquear cofres con recompensas simbólicas y subir de nivel.
                 Cada avance refleja tu progreso emocional y convierte tu
@@ -413,13 +435,13 @@ export const LandingPage = (): JSX.Element => {
               </div>
 
               <img
-                className="absolute w-[292px] h-[251px] top-[40px] left-[871px] object-cover"
+                className="hidden md:block absolute w-[292px] h-[251px] top-[40px] left-[871px] object-cover"
                 alt="Rectangle"
                 src="/rectangle-140.png"
               />
 
               <img
-                className="absolute w-[244px] h-[290px] top-[-35px] left-[1137px] object-cover"
+                className="hidden md:block absolute w-[244px] h-[290px] top-[-35px] left-[1137px] object-cover"
                 alt="Rectangle"
                 src="/rectangle-139.png"
               />
@@ -428,14 +450,14 @@ export const LandingPage = (): JSX.Element => {
         </section>
 
         {/* Rewards Banner */}
-        <div className="w-full h-[124px] mt-[141px] bg-[#f5f0a1c2] flex items-center justify-center">
-          <div className="[font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#0f2d34cc] text-[40px] tracking-[0] leading-[normal] text-center">
+        <div className="w-full min-h-[124px] mt-[70px] md:mt-[141px] bg-[#f5f0a1c2] flex items-center justify-center p-4 md:p-0">
+          <div className="[font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#0f2d34cc] text-2xl md:text-[40px] tracking-[0] leading-[normal] text-center">
             CADA ACTIVIDAD QUE COMPLETES,TE DARA LAS SIGUIENTES RECOMPENSAS
           </div>
         </div>
 
         {/* Rewards Section - Icons are clickable and redirect to their pages */}
-        <section className="flex justify-center gap-16 mt-[154px]">
+        <section className="flex flex-col md:flex-row justify-center gap-8 md:gap-16 mt-[70px] md:mt-[154px] px-4 md:px-0">
           {rewardItems.map((reward, index) => {
             let to = undefined;
             if (reward.title === "PERSONAJES UNÍCOS") to = "/characters";
@@ -444,16 +466,16 @@ export const LandingPage = (): JSX.Element => {
             return (
               <div key={`reward-${index}`} className="flex flex-col items-center">
                 <div
-                  className="w-[311px] h-[283px] bg-[#f5f0a1] rounded-[155.5px/141.5px] border-4 border-solid shadow-[5px_4px_4px_#00000040] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
+                  className="w-[250px] h-[220px] md:w-[311px] md:h-[283px] bg-[#f5f0a1] rounded-[155.5px/141.5px] border-4 border-solid shadow-[5px_4px_4px_#00000040] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
                   onClick={() => to && navigate(to)}
                 >
                   <img
-                    className="w-[230px] h-[228px] object-cover"
+                    className="w-[180px] h-[178px] md:w-[230px] md:h-[228px] object-cover"
                     alt={reward.alt}
                     src={reward.image}
                   />
                 </div>
-                <div className="mt-6 [text-shadow:5px_4px_4px_#00000040] [font-family:'Quicksand',Helvetica] font-bold text-[#000000e6] text-3xl tracking-[0] leading-[normal] text-center">
+                <div className="mt-4 md:mt-6 [text-shadow:5px_4px_4px_#00000040] [font-family:'Quicksand',Helvetica] font-bold text-[#000000e6] text-2xl md:text-3xl tracking-[0] leading-[normal] text-center">
                   {reward.title}
                 </div>
               </div>
@@ -462,49 +484,21 @@ export const LandingPage = (): JSX.Element => {
         </section>
 
         {/* Call to Action Section */}
-        <section className="mt-[331px] flex flex-col items-center">
-          <div className="[text-shadow:10px_10px_4px_#00000026] [font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#964889] text-[65px] text-center tracking-[5.20px] leading-[80px]">
+        <section className="mt-[120px] md:mt-[331px] flex flex-col items-center px-4 md:px-0">
+          <div className="[text-shadow:10px_10px_4px_#00000026] [font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#964889] text-3xl md:text-[65px] text-center tracking-[3px] md:tracking-[5.20px] leading-[1.2] md:leading-[80px]">
             ¿Qué esperas para
           </div>
-          <div className="[text-shadow:10px_10px_4px_#00000026] [font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#964889] text-[50px] text-center tracking-[12.50px] leading-[normal]">
+          <div className="[text-shadow:10px_10px_4px_#00000026] [font-family:'Bagel_Fat_One',Helvetica] font-normal text-[#964889] text-2xl md:text-[50px] text-center tracking-[6px] md:tracking-[12.50px] leading-[normal] mt-4 md:mt-0">
             COMENZAR TU VIAJE EMOCIONAL?
           </div>
 
-          <Button className="mt-[100px] w-[342px] h-[87px] bg-white rounded-[15px] border-2 border-solid border-[#9b0081] shadow-[10px_10px_4px_#00000026] [font-family:'Quicksand',Helvetica] font-bold text-black text-[35px] tracking-[8.75px]">
+          <Button className="mt-[50px] md:mt-[100px] w-full max-w-[342px] h-[60px] md:h-[87px] bg-white rounded-[15px] border-2 border-solid border-[#9b0081] shadow-[10px_10px_4px_#00000026] [font-family:'Quicksand',Helvetica] font-bold text-black text-2xl md:text-[35px] tracking-[4px] md:tracking-[8.75px]">
             CONTACTAR
           </Button>
         </section>
 
         {/* Footer Section */}
-        <footer className="relative w-full h-[250px] bg-[#f5f0a1] mt-[120px]">
-          <img
-            className="absolute w-[35px] h-[40px] top-[130px] left-[80px]"
-            alt="Group"
-            src="/group-265.svg"
-          />
-          <img
-            className="absolute w-[35px] h-[40px] top-[160px] left-[140px]"
-            alt="Group"
-            src="/group-265.svg"
-          />
-          <img
-            className="absolute w-[35px] h-[40px] top-[170px] left-[220px]"
-            alt="Group"
-            src="/group-265.svg"
-          />
-          <div className="absolute w-[460px] h-[27px] bottom-[75px] left-[730px] [font-family:'Inter',Helvetica] font-normal text-black text-xl text-center">
-            ISEKAI 2025- Todos los derechos reservados
-          </div>
-          {/* Legal Links */}
-          <div className="absolute right-[80px] bottom-[35px]">
-            <div className="[font-family:'Quicksand',Helvetica] font-normal text-black text-2xl text-center mb-4">
-              POLITICAS DE PRIVACIDAD
-            </div>
-            <div className="[font-family:'Quicksand',Helvetica] font-normal text-black text-2xl text-center">
-              DERECHOS RESERVADOS
-            </div>
-          </div>
-        </footer>
+        <Footer className="mt-[60px] md:mt-[120px]" />
 
         {/* Modales */}
         <LoginModal
@@ -536,6 +530,16 @@ export const LandingPage = (): JSX.Element => {
         <AppointmentModal
           isOpen={appointmentOpen}
           onClose={() => setAppointmentOpen(false)}
+          userId={(() => {
+            try {
+              const user = localStorage.getItem('isekaiUser');
+              if (!user) return '';
+              const userObj = JSON.parse(user);
+              return userObj.id || '';
+            } catch {
+              return '';
+            }
+          })()}
         />
         {/* Modal para el mapa */}
         {showMapModal && (

@@ -19,11 +19,12 @@ export default function LoginPage() {
         // Guardar usuario y token en localStorage
         localStorage.setItem("isekaiUser", JSON.stringify(res.user));
         localStorage.setItem("isekaiToken", res.token);
-        // Redirigir según el rol
+        
+        // Forzar la redirección y recargar para asegurar que se apliquen los cambios
         if (res.user.role === "admin") {
-          navigate("/administrador");
+          window.location.href = "/administrador";
         } else {
-          navigate("/welcome");
+          window.location.href = "/home";
         }
       } else {
         setError(res.message || "Credenciales incorrectas");

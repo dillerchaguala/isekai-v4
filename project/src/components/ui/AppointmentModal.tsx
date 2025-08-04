@@ -1,15 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface AppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  userId: string;
+  selectedTherapyType?: string;
+}
+
+interface Appointment {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  dia: string;
+  hora: string;
+  sede: string;
+  discapacidades: string;
+  comentarios: string;
+  estado: 'pendiente' | 'confirmada' | 'cancelada';
 }
 
 export const AppointmentModal: React.FC<AppointmentModalProps> = ({ 
   isOpen, 
-  onClose 
+  onClose,
+  userId 
 }) => {
+  const [activeTab, setActiveTab] = useState<'agendar' | 'ver'>('ver');
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
     apellidos: '',
@@ -19,6 +37,24 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     discapacidades: '',
     comentarios: ''
   });
+
+  // Efecto para cargar las citas existentes
+  React.useEffect(() => {
+    if (isOpen && userId) {
+      const fetchAppointments = async () => {
+        try {
+          const res = await fetch(`http://localhost:4000/api/appointment/user/${userId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setAppointments(data);
+          }
+        } catch (error) {
+          console.error('Error fetching appointments:', error);
+        }
+      };
+      fetchAppointments();
+    }
+  }, [isOpen, userId]);
 
   if (!isOpen) return null;
 
@@ -32,29 +68,42 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Obtener el userId del usuario logueado desde localStorage
-    const user = localStorage.getItem('isekaiUser');
-    const userId = user ? JSON.parse(user).id : null;
-    if (!userId) {
-      alert('Debes iniciar sesión para agendar una cita');
-      return;
-    }
-    const appointmentData = {
-      userId,
-      date: `${formData.dia}T${formData.hora}`,
-      details: `${formData.nombre} ${formData.apellidos} - ${formData.sede} - ${formData.discapacidades} - ${formData.comentarios}`,
-    };
-    const res = await fetch('http://localhost:4000/api/appointment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(appointmentData),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      alert('Cita agendada correctamente');
-      onClose();
-    } else {
-      alert(data.message || 'Error al agendar cita');
+    setIsLoading(true);
+    try {
+      if (!userId) {
+        alert('Debes iniciar sesión para agendar una cita');
+        return;
+      }
+      const appointmentData = {
+        userId,
+        nombre: formData.nombre,
+        apellidos: formData.apellidos,
+        dia: formData.dia,
+        hora: formData.hora,
+        sede: formData.sede,
+        discapacidades: formData.discapacidades,
+        comentarios: formData.comentarios,
+        estado: 'pendiente'
+      };
+      const res = await fetch('http://localhost:4000/api/appointment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appointmentData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Actualizar la lista de citas
+        setAppointments(prev => [...prev, data]);
+        alert('Cita agendada correctamente');
+        setActiveTab('ver'); // Cambiar a la pestaña de ver citas
+      } else {
+        alert(data.message || 'Error al agendar cita');
+      }
+    } catch (error) {
+      alert('Error al agendar la cita');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -72,111 +121,168 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         </button>
         {/* Content */}
         <div className="p-8 pt-12">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Bagel Fat One' }}>
-              AGENDA TU CITA
+          {/* Header with Tabs */}
+          <div className="flex flex-col items-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: 'Bagel Fat One' }}>
+              {activeTab === 'ver' ? 'MIS CITAS' : 'AGENDA TU CITA'}
             </h1>
-          </div>
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Primera fila - Nombre y Apellidos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <input
-                  type="text"
-                  name="nombre"
-                  value={formData.nombre}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
-                  placeholder="Nombre"
-                  required
-                />
-              </div>
-              <div>
-                <input
-                  type="text"
-                  name="apellidos"
-                  value={formData.apellidos}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
-                  placeholder="Apellidos"
-                  required
-                />
-              </div>
-            </div>
-            {/* Segunda fila - Día y Hora */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <input
-                  type="date"
-                  name="dia"
-                  value={formData.dia}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
-                  required
-                />
-              </div>
-              <div>
-                <input
-                  type="time"
-                  name="hora"
-                  value={formData.hora}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
-                  required
-                />
-              </div>
-            </div>
-            {/* Tercera fila - Sede y Discapacidades */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <select
-                  name="sede"
-                  value={formData.sede}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
-                  required
-                >
-                  <option value="" className="text-gray-900">Sede</option>
-                  <option value="bogota-norte" className="text-gray-900">Bogotá Norte</option>
-                  <option value="bogota-sur" className="text-gray-900">Bogotá Sur</option>
-                  <option value="bogota-centro" className="text-gray-900">Bogotá Centro</option>
-                  <option value="virtual" className="text-gray-900">Virtual</option>
-                </select>
-              </div>
-              <div>
-                <input
-                  type="text"
-                  name="discapacidades"
-                  value={formData.discapacidades}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
-                  placeholder="Discapacidades"
-                />
-              </div>
-            </div>
-            {/* Comentarios */}
-            <div>
-              <textarea
-                name="comentarios"
-                value={formData.comentarios}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm resize-none"
-                placeholder="Tus comentarios..."
-              />
-            </div>
-            {/* Submit Button */}
-            <div className="flex justify-center pt-4">
+            <div className="flex gap-4 p-1 bg-white/10 rounded-full">
               <button
-                type="submit"
-                className="px-12 py-3 bg-transparent border-2 border-white text-white font-bold rounded-full hover:bg-white/10 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                onClick={() => setActiveTab('ver')}
+                className={`px-6 py-2 rounded-full transition-all duration-200 ${
+                  activeTab === 'ver' ? 'bg-yellow-400 text-gray-900' : 'text-white'
+                }`}
               >
-                Enviar
+                Ver Citas
+              </button>
+              <button
+                onClick={() => setActiveTab('agendar')}
+                className={`px-6 py-2 rounded-full transition-all duration-200 ${
+                  activeTab === 'agendar' ? 'bg-yellow-400 text-gray-900' : 'text-white'
+                }`}
+              >
+                Agendar
               </button>
             </div>
-          </form>
+          </div>
+
+          {/* Content based on active tab */}
+          {activeTab === 'ver' ? (
+            <div className="space-y-4">
+              {appointments.length === 0 ? (
+                <div className="text-center text-white py-8">
+                  <p>No tienes citas agendadas</p>
+                  <button
+                    onClick={() => setActiveTab('agendar')}
+                    className="mt-4 px-6 py-2 bg-yellow-400 text-gray-900 rounded-full hover:bg-yellow-500 transition-all duration-200"
+                  >
+                    Agendar una cita
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {appointments.map((appointment) => (
+                    <div
+                      key={appointment.id}
+                      className="p-4 bg-white/20 rounded-2xl border border-white/30"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-white font-bold">{appointment.sede}</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm ${
+                          appointment.estado === 'confirmada' ? 'bg-green-500' :
+                          appointment.estado === 'pendiente' ? 'bg-yellow-400' :
+                          'bg-red-500'
+                        } text-white`}>
+                          {appointment.estado}
+                        </span>
+                      </div>
+                      <p className="text-white/80">{new Date(appointment.dia).toLocaleDateString()} - {appointment.hora}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Primera fila - Nombre y Apellidos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <input
+                    type="text"
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
+                    placeholder="Nombre"
+                    required
+                  />
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    name="apellidos"
+                    value={formData.apellidos}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
+                    placeholder="Apellidos"
+                    required
+                  />
+                </div>
+              </div>
+              {/* Segunda fila - Día y Hora */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <input
+                    type="date"
+                    name="dia"
+                    value={formData.dia}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <input
+                    type="time"
+                    name="hora"
+                    value={formData.hora}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
+                    required
+                  />
+                </div>
+              </div>
+              {/* Tercera fila - Sede y Discapacidades */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <select
+                    name="sede"
+                    value={formData.sede}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
+                    required
+                  >
+                    <option value="" className="text-gray-900">Sede</option>
+                    <option value="bogota-norte" className="text-gray-900">Bogotá Norte</option>
+                    <option value="bogota-sur" className="text-gray-900">Bogotá Sur</option>
+                    <option value="bogota-centro" className="text-gray-900">Bogotá Centro</option>
+                    <option value="virtual" className="text-gray-900">Virtual</option>
+                  </select>
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    name="discapacidades"
+                    value={formData.discapacidades}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm"
+                    placeholder="Discapacidades"
+                  />
+                </div>
+              </div>
+              {/* Comentarios */}
+              <div>
+                <textarea
+                  name="comentarios"
+                  value={formData.comentarios}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="w-full px-4 py-4 bg-white/20 border border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 focus:border-yellow-300/50 transition-all duration-200 backdrop-blur-sm resize-none"
+                  placeholder="Tus comentarios..."
+                />
+              </div>
+              {/* Submit Button */}
+              <div className="text-center">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-8 py-4 bg-yellow-400 text-gray-900 rounded-full hover:bg-yellow-500 transition-all duration-200 font-bold"
+                >
+                  {isLoading ? 'Agendando...' : 'Agendar Cita'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>

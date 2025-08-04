@@ -1,23 +1,13 @@
 import { Brain, Heart, MessageCircle, Calendar, Users, Phone, Mail, Home } from 'lucide-react';
-
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Footer } from "../components/ui/footer";
 
 
 function TherapyTypesPage() {
-  const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
-  useEffect(() => {
-    const user = localStorage.getItem('isekaiUser');
-    if (user) {
-      try {
-        const userObj = JSON.parse(user);
-        if (userObj.role !== 'admin') {
-          setUserName(userObj.name);
-        }
-      } catch {}
-    }
-  }, []);
+
+  // La página de tipos de terapia es pública, no necesita verificación de autenticación
+
   return (
     <div className="bg-white min-h-screen">
       {/* Header visual igual a LandingPage */}
@@ -32,7 +22,10 @@ function TherapyTypesPage() {
       {/* Botón Inicio en el header */}
       <button
         className="absolute top-6 left-6 z-30 bg-white bg-opacity-80 rounded-full px-6 py-2 shadow-lg flex items-center gap-2 hover:bg-yellow-100 transition"
-        onClick={() => navigate('/')}
+        onClick={() => {
+          const isAuth = localStorage.getItem('isekaiUser');
+          navigate(isAuth ? '/home' : '/');
+        }}
       >
         <Home className="w-6 h-6 text-[#0f2d34]" />
         <span className="font-bold text-[#0f2d34] text-lg">Inicio</span>
@@ -284,41 +277,7 @@ function TherapyTypesPage() {
           </div>
         </section>
       </main>
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-xl font-bold mb-4">
-                Terapia<span className="text-pink-500">.</span>
-              </h3>
-              <p className="text-gray-400">
-                Acompañándote en tu camino hacia el bienestar emocional y mental.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Servicios</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>Terapia Individual</li>
-                <li>Terapia de Pareja</li>
-                <li>Terapia Familiar</li>
-                <li>Terapia Grupal</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Contacto</h4>
-              <div className="space-y-2 text-gray-400">
-                <p>📞 +1 (555) 123-4567</p>
-                <p>✉️ info@terapia.com</p>
-                <p>📍 123 Calle Principal, Ciudad</p>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Terapia. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer className="mt-20" />
     </div>
   );
 }

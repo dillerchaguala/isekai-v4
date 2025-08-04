@@ -2,7 +2,10 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
+import authValidateRoutes from './routes/auth-validate.js';
 import appointmentRoutes from './routes/appointment.js';
+import progressRoutes from './routes/progress.js';
+import communityRoutes from './routes/community.js';
 
 const app = express();
 app.use(cors());
@@ -10,7 +13,10 @@ app.use(express.json());
 
 // Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', authValidateRoutes);
 app.use('/api/appointment', appointmentRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/community', communityRoutes);
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = 'mongodb://localhost:27017/isekai-v4';

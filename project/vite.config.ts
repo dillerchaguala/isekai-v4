@@ -6,6 +6,12 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react()],
   base: "./",
+  resolve: {
+    alias: [{
+      find: '@',
+      replacement: '/src'
+    }]
+  },
   server: {
     host: true,
     port: 5173,
