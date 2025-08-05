@@ -6,6 +6,23 @@ import { auth } from '../middleware/auth.js';
 const router = express.Router();
 
 // Obtener el progreso del usuario
+// Inicializar dailyActivities y sessionStreak para el usuario
+router.post('/initialize', auth, async (req, res) => {
+  try {
+    const { dailyActivities, sessionStreak } = req.body;
+    let progress = await Progress.findOne({ userId: req.user.userId });
+    if (!progress) {
+      progress = new Progress({ userId: req.user.userId });
+    }
+    // Guardar dailyActivities y sessionStreak
+    progress.dailyActivities = dailyActivities;
+    progress.sessionStreak = sessionStreak || 0;
+    await progress.save();
+    res.json(progress);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al inicializar el progreso' });
+  }
+});
 router.get('/progress', auth, async (req, res) => {
   try {
     let progress = await Progress.findOne({ userId: req.user.userId });

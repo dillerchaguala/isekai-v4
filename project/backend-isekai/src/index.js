@@ -6,10 +6,14 @@ import authValidateRoutes from './routes/auth-validate.js';
 import appointmentRoutes from './routes/appointment.js';
 import progressRoutes from './routes/progress.js';
 import communityRoutes from './routes/community.js';
+import activitiesRouter from './routes/activities.js';
+import therapiesRouter from './routes/therapies.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/api/activities', activitiesRouter);
+app.use('/api/therapies', therapiesRouter);
 
 // Rutas
 app.use('/api/auth', authRoutes);

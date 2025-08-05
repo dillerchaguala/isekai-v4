@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
+// ...existing code...
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import UsersManagement from './sections/UsersManagement';
-import ActivitiesManagement from './sections/ActivitiesManagement';
-import TherapistsManagement from './sections/TherapistsManagement';
-import AchievementsManagement from './sections/AchievementsManagement';
+import UsersManagement from "./sections/UsersManagement.tsx";
+import ActivitiesManagement from "./sections/ActivitiesManagement.tsx";
+import TherapistsManagement from "./sections/TherapistsManagement.tsx";
+import AchievementsManagement from "./sections/AchievementsManagement.tsx";
 import DashboardStats from './sections/DashboardStats';
+import AppointmentsManagement from "./sections/AppointmentsManagement.tsx";
+import TherapiesManagement from "./sections/TherapiesManagement.tsx";
+import ExercisesManagement from "./sections/ExercisesManagement.tsx";
 import { useAuth } from '../../lib/AuthContext';
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { isAdmin, user } = useAuth();
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,6 +35,7 @@ export function AdminDashboard() {
                 Exportar Datos
               </Button>
               <Button className="bg-purple-500 hover:bg-purple-600 text-white">
+
                 Nueva Actividad
               </Button>
             </div>
@@ -58,6 +62,24 @@ export function AdminDashboard() {
                 Actividades
               </TabsTrigger>
               <TabsTrigger 
+                value="appointments"
+                className="text-white data-[state=active]:bg-white/20"
+              >
+                Citas Agendadas
+              </TabsTrigger>
+              <TabsTrigger 
+                value="therapies"
+                className="text-white data-[state=active]:bg-white/20"
+              >
+                Terapias
+              </TabsTrigger>
+              <TabsTrigger 
+                value="exercises"
+                className="text-white data-[state=active]:bg-white/20"
+              >
+                Ejercicios
+              </TabsTrigger>
+              <TabsTrigger 
                 value="therapists"
                 className="text-white data-[state=active]:bg-white/20"
               >
@@ -82,6 +104,18 @@ export function AdminDashboard() {
 
               <TabsContent value="activities">
                 <ActivitiesManagement />
+              </TabsContent>
+
+              <TabsContent value="appointments">
+                <AppointmentsManagement />
+              </TabsContent>
+
+              <TabsContent value="therapies">
+                <TherapiesManagement />
+              </TabsContent>
+
+              <TabsContent value="exercises">
+                <ExercisesManagement />
               </TabsContent>
 
               <TabsContent value="therapists">

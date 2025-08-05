@@ -27,6 +27,14 @@ export function AchievementsPage() {
   return (
     <div className="min-h-screen bg-[url(/rectangle-119.png)] bg-cover bg-[50%_50%]">
       <div className="container mx-auto px-4 py-16">
+        <div className="flex justify-end mb-4">
+          <button
+            className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-2 px-6 rounded-lg shadow"
+            onClick={() => window.location.href = '/home'}
+          >
+            Volver al Inicio
+          </button>
+        </div>
         <h1 className="text-4xl font-bold text-white mb-8">Logros</h1>
 
         {/* Logros de Ejercicios */}

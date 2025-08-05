@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
 const progressSchema = new mongoose.Schema({
+  dailyActivities: {
+    type: Array,
+    default: []
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

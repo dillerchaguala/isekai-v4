@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
@@ -19,7 +18,7 @@ export const LandingPage = (): JSX.Element => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const user = localStorage.getItem('isekaiUser');
+    const user = localStorage.getItem('user');
     if (user) {
       try {
         const userObj = JSON.parse(user);
@@ -39,8 +38,8 @@ export const LandingPage = (): JSX.Element => {
       : { text: "INICIAR SESION", color: "text-white", onClick: () => { setLoginMode('login'); setLoginOpen(true); } },
     userName
       ? { text: "CERRAR SESIÓN", color: "text-white font-bold", onClick: () => {
-          localStorage.removeItem('isekaiUser');
-          localStorage.removeItem('isekaiToken');
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
           setUserName(null);
           navigate('/');
         } }
@@ -48,7 +47,7 @@ export const LandingPage = (): JSX.Element => {
   ];
   // Al cargar la página, si hay usuario en localStorage, mostrar su nombre
   useEffect(() => {
-    const user = localStorage.getItem('isekaiUser');
+    const user = localStorage.getItem('user');
     if (user) {
       try {
         const userObj = JSON.parse(user);
@@ -110,8 +109,6 @@ export const LandingPage = (): JSX.Element => {
       rectangleSrc: "/rectangle-334.svg",
     },
   ];
-
-  // ...existing code...
 
   // Reward items data
   const rewardItems = [
@@ -506,24 +503,18 @@ export const LandingPage = (): JSX.Element => {
           onClose={() => setLoginOpen(false)}
           mode={loginMode}
           onSwitchMode={setLoginMode}
-          onLoginSuccess={() => {
+          onLoginSuccess={(userObj, token) => {
             setLoginOpen(false);
-            const user = localStorage.getItem('isekaiUser');
-            let role = '';
-            let name = '';
-            try {
-              const userObj = user ? JSON.parse(user) : null;
-              role = userObj?.role || '';
-              name = userObj?.name || '';
-            } catch (e) {
-              role = '';
-              name = '';
-            }
+            // Guardar usuario y token con las claves correctas
+            localStorage.setItem('user', JSON.stringify(userObj));
+            localStorage.setItem('token', token);
+            let role = userObj?.role || '';
+            let name = userObj?.name || '';
             if (role === 'admin') {
-              navigate('/admin-appointments');
+              navigate('/administrador');
             } else {
               setUserName(name);
-              // El usuario normal permanece en la landing
+              navigate('/home'); // Redirigir a apartado de usuario
             }
           }}
         />
@@ -532,7 +523,7 @@ export const LandingPage = (): JSX.Element => {
           onClose={() => setAppointmentOpen(false)}
           userId={(() => {
             try {
-              const user = localStorage.getItem('isekaiUser');
+              const user = localStorage.getItem('user');
               if (!user) return '';
               const userObj = JSON.parse(user);
               return userObj.id || '';

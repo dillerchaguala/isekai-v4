@@ -16,10 +16,11 @@ export default function LoginPage() {
     try {
       const res = await loginUser({ email, password });
       if (res.token) {
-        // Guardar usuario y token en localStorage
-        localStorage.setItem("isekaiUser", JSON.stringify(res.user));
-        localStorage.setItem("isekaiToken", res.token);
-        
+        // Guardar usuario y token en localStorage con las claves correctas
+        localStorage.setItem("user", JSON.stringify(res.user));
+        localStorage.setItem("token", res.token);
+        // Mostrar el rol guardado en consola para depuración
+        console.log("Usuario logueado:", res.user);
         // Forzar la redirección y recargar para asegurar que se apliquen los cambios
         if (res.user.role === "admin") {
           window.location.href = "/administrador";

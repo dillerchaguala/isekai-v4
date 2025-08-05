@@ -6,7 +6,7 @@ import { Footer } from "../../components/ui/footer";
 import { AppointmentModal } from "../../components/ui/AppointmentModal";
 
 // Tipos para las actividades y progreso
-import { DailyActivity, Exercise, dailyActivities, unlockableCharacters, unlockablePets, achievements } from "../../data/activities";
+import { DailyActivity, Exercise } from "../../data/activities";
 import { weeklyTopPlayers, communityHighlights, groupActivities } from "../../data/community";
 import { ExerciseModal } from "../../components/ui/ExerciseModal";
 
@@ -34,6 +34,9 @@ export const AuthenticatedLandingPage = () => {
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  // const [exercises, setExercises] = useState<Exercise[]>([]);
+  // const [achievementsList, setAchievementsList] = useState<Achievement[]>([]);
+  const [dailyActivitiesList, setDailyActivitiesList] = useState<DailyActivity[]>([]);
 
   // Función para actualizar XP y nivel
   const updateProgress = async (xpGained: number) => {
@@ -72,117 +75,177 @@ export const AuthenticatedLandingPage = () => {
   const completeActivity = async (activityId: string, xp: number) => {
     if (isLoading) return;
 
-    try {
-      // Primero actualizamos el estado de la actividad
-      setProgress(prev => {
-        if (!prev) return prev;
-        const updatedActivities = prev.dailyActivities.map(activity =>
-          activity.id === activityId ? { ...activity, completed: true } : activity
-        );
-        
-        const updatedProgress = {
-          ...prev,
-          dailyActivities: updatedActivities
-        };
-        
-        // Guardar en localStorage
-        localStorage.setItem('userProgress', JSON.stringify(updatedProgress));
-        return updatedProgress;
-      });
-
-      // Luego actualizamos el XP
-      await updateProgress(xp);
-    } catch (error) {
-      console.error('Error completando actividad:', error);
-    }
+    // Solo permite completar una vez por día
+    setProgress(prev => {
+      if (!prev) return prev;
+      const activity = prev.dailyActivities.find(a => a.id === activityId);
+      if (activity?.completed) return prev; // Ya completada hoy
+      const updatedActivities = prev.dailyActivities.map(a =>
+        a.id === activityId ? { ...a, completed: true } : a
+      );
+      const updatedProgress = {
+        ...prev,
+        dailyActivities: updatedActivities
+      };
+      localStorage.setItem('userProgress', JSON.stringify(updatedProgress));
+      // Suma XP solo si no estaba completada
+      updateProgress(xp);
+      return updatedProgress;
+    });
   };
 
-  // Navigation menu items con onClick
-  const navItems = [
-    { text: `¡Hola, ${userName}!`, color: "text-yellow-400 font-bold", onClick: () => {} },
-    { text: "Ejercicios", color: "text-yellow-400 font-bold", onClick: () => navigate('/exercises') },
-    { text: "Logros", color: "text-yellow-400 font-bold", onClick: () => navigate('/achievements') },
-    { text: "CERRAR SESIÓN", color: "text-white font-bold", onClick: () => {
-      localStorage.removeItem('isekaiUser');
-      localStorage.removeItem('isekaiToken');
-      navigate('/');
-    }}
-  ];
-
   useEffect(() => {
-    const user = localStorage.getItem('isekaiUser');
-    // Si no hay usuario autenticado, redirige al inicio
+    const user = localStorage.getItem('user');
     if (!user) {
       navigate('/');
       return;
     }
-
     try {
       const userObj = JSON.parse(user);
       if (!userObj || !userObj.name || !userObj.id) {
-        // Si el objeto de usuario no es válido, limpia el almacenamiento y redirige
-        localStorage.removeItem('isekaiUser');
-        localStorage.removeItem('isekaiToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
         navigate('/');
         return;
       }
-
-      // Si todo está bien, actualiza el estado
       setUserName(userObj.name);
       fetchProgress();
+      // fetchExercises();
+      // fetchAchievements();
+      fetchDailyActivities();
+      // Reiniciar actividades si es un nuevo día
+      const today = new Date().toDateString();
+      const lastReset = localStorage.getItem('lastDailyReset');
+      if (lastReset !== today) {
+        setProgress(prev => {
+          if (!prev) return prev;
+          const resetActivities = prev.dailyActivities.map(a => ({ ...a, completed: false }));
+          const updatedProgress = { ...prev, dailyActivities: resetActivities };
+          localStorage.setItem('userProgress', JSON.stringify(updatedProgress));
+          // Actualiza también en el backend
+          const token = localStorage.getItem('token');
+          fetch('http://localhost:4000/api/progress/initialize', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ dailyActivities: resetActivities, sessionStreak: prev.sessionStreak })
+          });
+          return updatedProgress;
+        });
+        localStorage.setItem('lastDailyReset', today);
+      }
     } catch (error) {
-      // Si hay un error al parsear el usuario, limpia el almacenamiento y redirige
-      localStorage.removeItem('isekaiUser');
-      localStorage.removeItem('isekaiToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
       navigate('/');
     }
   }, [navigate]);
 
   const fetchProgress = async () => {
     try {
-      // Intentar obtener el progreso del localStorage primero
-      const savedProgress = localStorage.getItem('userProgress');
-      const lastLoginDate = localStorage.getItem('lastLoginDate');
-      const today = new Date().toDateString();
-      
-      // Si es un nuevo día y hay progreso guardado, actualizar la racha
-      if (savedProgress && lastLoginDate !== today) {
-        const progressData = JSON.parse(savedProgress);
-        progressData.sessionStreak = (progressData.sessionStreak || 0) + 1;
-        progressData.gems = (progressData.gems || 0) + 5; // Bonus de gemas por racha
-        progressData.experience = (progressData.experience || 0) + 50; // XP por racha diaria
-        localStorage.setItem('userProgress', JSON.stringify(progressData));
-        localStorage.setItem('lastLoginDate', today);
-        setProgress(progressData);
-        return;
-      } else if (savedProgress) {
-        setProgress(JSON.parse(savedProgress));
-        return;
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:4000/api/progress/progress', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!res.ok) throw new Error('No se pudo obtener el progreso');
+      let progressData = await res.json();
+      if (!progressData.dailyActivities || progressData.dailyActivities.length === 0) {
+        // Si el backend no tiene actividades diarias, usa las del backend (no locales)
+        const dailyRes = await fetch('http://localhost:4000/api/activities', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const dailyFromBackend = dailyRes.ok ? await dailyRes.json() : [];
+        const initializedActivities = dailyFromBackend.map((a: any) => ({ ...a, completed: false }));
+        // POST para guardar en el backend
+        const saveRes = await fetch('http://localhost:4000/api/progress/initialize', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ dailyActivities: initializedActivities, sessionStreak: 0 })
+        });
+        if (!saveRes.ok) throw new Error('No se pudo inicializar el progreso en el backend');
+        progressData = await saveRes.json();
       }
-
-      // Si no hay progreso guardado, crear uno inicial
-      localStorage.setItem('lastLoginDate', today);
-      const initialProgress: Progress = {
-        level: 1,
-        experience: 0,
-        unlockedCharacters: [],
-        unlockedPets: [],
-        gems: 0,
-        sessionStreak: 0,
-        achievements: [
-          ...achievements.exercise.map(a => ({ achievementId: a.id, progress: 0 })),
-          ...achievements.therapy.map(a => ({ achievementId: a.id, progress: 0 })),
-          ...achievements.social.map(a => ({ achievementId: a.id, progress: 0 }))
-        ],
-        dailyActivities: dailyActivities
-      };
-
-      setProgress(initialProgress);
-      localStorage.setItem('userProgress', JSON.stringify(initialProgress));
+      setProgress(progressData);
     } catch (error) {
       console.error('Error fetching progress:', error);
     }
   };
+
+  // Obtener ejercicios desde el backend
+  // const fetchExercises = async () => {
+  //   try {
+  //     const token = localStorage.getItem('token');
+  //     const res = await fetch('http://localhost:4000/api/exercises', {
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`,
+  //         'Content-Type': 'application/json'
+  //       }
+  //     });
+  //     if (!res.ok) throw new Error('No se pudo obtener los ejercicios');
+  //     const data = await res.json();
+  //     setExercises(data);
+  //   } catch (error) {
+  //     setExercises([]);
+  //   }
+  // };
+
+  // Obtener logros desde el backend
+  // const fetchAchievements = async () => {
+  //   try {
+  //     const token = localStorage.getItem('token');
+  //     const res = await fetch('http://localhost:4000/api/achievements', {
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`,
+  //         'Content-Type': 'application/json'
+  //       }
+  //     });
+  //     if (!res.ok) throw new Error('No se pudo obtener los logros');
+  //     const data = await res.json();
+  //     setAchievementsList(data);
+  //   } catch (error) {
+  //     setAchievementsList([]);
+  //   }
+  // };
+
+  // Obtener actividades diarias desde el backend
+  const fetchDailyActivities = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:4000/api/activities', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!res.ok) throw new Error('No se pudo obtener las actividades diarias');
+      const data = await res.json();
+      setDailyActivitiesList(data);
+    } catch (error) {
+      setDailyActivitiesList([]);
+    }
+  };
+
+  const navItems = [
+    { text: `¡Hola, ${userName}!`, color: "text-yellow-400 font-bold", onClick: () => {} },
+    { text: "Ejercicios", color: "text-yellow-400 font-bold", onClick: () => navigate('/exercises') },
+    { text: "Logros", color: "text-yellow-400 font-bold", onClick: () => navigate('/achievements') },
+    { text: "CERRAR SESIÓN", color: "text-white font-bold", onClick: () => {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      navigate('/');
+    }}
+  ];
 
   return (
     <div className="bg-white flex flex-col min-h-screen">
@@ -256,19 +319,23 @@ export const AuthenticatedLandingPage = () => {
                 <Card className="bg-white/10 backdrop-blur-md border border-white/20">
                   <CardContent className="p-6 text-white">
                     <h3 className="text-xl font-bold mb-2">Racha</h3>
-                    <div className="flex items-center gap-4">
+                    <div className="flex justify-between items-center">
                       <div>
-                        <p className="text-4xl font-bold">{progress?.sessionStreak || 0}</p>
-                        <p className="text-sm opacity-75">días consecutivos</p>
+                        <p className="text-sm">Días Consecutivos</p>
+                        <p className="text-2xl font-bold">{progress?.sessionStreak || 0}</p>
                       </div>
-                      <div className="flex-1">
-                        <div className="w-full bg-white/20 rounded-full h-2">
+                      <div className="text-right">
+                        <p className="text-sm mb-1">
+                          Próxima recompensa en {7 - ((progress?.sessionStreak || 0) % 7)} días
+                        </p>
+                        <div className="w-32 bg-white/20 rounded-full h-2">
                           <div
                             className="bg-purple-400 h-2 rounded-full"
-                            style={{ width: `${((progress?.sessionStreak || 0) % 7) * 14.28}%` }}
+                            style={{
+                              width: `${((progress?.sessionStreak || 0) % 7) * 14.28}%`
+                            }}
                           />
                         </div>
-                        <p className="text-xs mt-1">Próxima recompensa: {7 - ((progress?.sessionStreak || 0) % 7)} días</p>
                       </div>
                     </div>
                   </CardContent>
@@ -276,152 +343,68 @@ export const AuthenticatedLandingPage = () => {
               </div>
             </div>
 
-            {/* Sección de Desbloqueos y Progreso */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-              {/* Panel de Actividades y XP */}
-              <div className="bg-[#0f2d34cc] backdrop-blur-md rounded-3xl p-8">
-                <h2 className="text-2xl font-bold text-white mb-6">Actividades Diarias</h2>
-                <div className="grid grid-cols-1 gap-4">
-                  {progress?.dailyActivities?.map((activity) => (
-                    <Card 
-                      key={activity.id}
-                      className={`${
-                        activity.completed 
-                          ? 'bg-green-900/20' 
-                          : 'bg-white/10 hover:bg-white/20'
-                      } transition-colors cursor-pointer`}
-                    >
-                      <CardContent className="p-4 text-white">
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h4 className="font-bold">{activity.name}</h4>
-                              <p className="text-sm opacity-75">{activity.description}</p>
-                              <p className="text-sm text-yellow-400">+{activity.xp} XP Total</p>
-                            </div>
-                          </div>
-                          
-                          {!activity.completed && (
-                            <div className="space-y-2">
-                              <h5 className="font-semibold text-sm text-gray-300">Ejercicios disponibles:</h5>
-                              <div className="grid grid-cols-1 gap-2">
-                                {activity.exercises.map((exercise) => (
-                                  <Button
-                                    key={exercise.id}
-                                    onClick={() => {
-                                      setSelectedExercise(exercise);
-                                      setIsExerciseModalOpen(true);
-                                    }}
-                                    variant="outline"
-                                    className="w-full justify-between"
-                                  >
-                                    <span>{exercise.name}</span>
-                                    <span>+{exercise.xp} XP</span>
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          <div className="flex justify-end">
-                            <Button
-                              onClick={() => completeActivity(activity.id, activity.xp)}
-                              className={`${
-                                activity.completed
-                                  ? 'bg-green-500 hover:bg-green-600'
-                                  : 'bg-yellow-400 hover:bg-yellow-500'
-                              } text-gray-900`}
-                              disabled={activity.completed || isLoading}
-                            >
-                              {activity.completed ? '¡Completado!' : 'Completar Actividad'}
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-
-                  {/* Actividad especial de racha diaria */}
-                  <Card className="bg-purple-900/20 border border-purple-500/30">
+            {/* Panel de Actividades Diarias */}
+            <div className="bg-[#0f2d34cc] backdrop-blur-md rounded-3xl p-8">
+              <h2 className="text-2xl font-bold text-white mb-6">Actividades Diarias</h2>
+              <div className="grid grid-cols-1 gap-4">
+                {(progress?.dailyActivities?.length ? progress.dailyActivities : dailyActivitiesList).map((activity) => (
+                  <Card 
+                    key={activity.id}
+                    className={`${
+                      activity.completed 
+                        ? 'bg-green-900/20' 
+                        : 'bg-white/10 hover:bg-white/20'
+                    } transition-colors cursor-pointer`}
+                  >
                     <CardContent className="p-4 text-white">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h4 className="font-bold">¡Racha Diaria!</h4>
-                          <p className="text-sm opacity-75">
-                            +50 XP y {progress?.gems || 0} gemas
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm mb-1">
-                            Próxima recompensa en {7 - ((progress?.sessionStreak || 0) % 7)} días
-                          </p>
-                          <div className="w-32 bg-white/20 rounded-full h-2">
-                            <div
-                              className="bg-purple-400 h-2 rounded-full"
-                              style={{
-                                width: `${((progress?.sessionStreak || 0) % 7) * 14.28}%`
-                              }}
-                            />
-                          </div>
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-lg mb-1">{activity.name}</h4>
+                        <p className="text-sm opacity-75 mb-2">{activity.description}</p>
+                        <p className="text-sm text-yellow-400">Total: +{activity.xp} XP</p>
+                        <div className="flex justify-end mt-2">
+                          <Button
+                            onClick={() => completeActivity(activity.id, activity.xp)}
+                            className={`${
+                              activity.completed
+                                ? 'bg-green-500 hover:bg-green-600'
+                                : 'bg-yellow-400 hover:bg-yellow-500'
+                            } text-gray-900`}
+                            disabled={activity.completed || isLoading}
+                          >
+                            {activity.completed ? '¡Completado!' : 'Completar Actividad'}
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                </div>
-              </div>
+                ))}
 
-              {/* Panel de Desbloqueos */}
-              <div className="bg-[#0f2d34cc] backdrop-blur-md rounded-3xl p-8">
-                <h2 className="text-2xl font-bold text-white mb-6">Próximos Desbloqueos</h2>
-                <div className="grid grid-cols-1 gap-4">
-                  {unlockableCharacters
-                    .filter(char => !progress?.unlockedCharacters.includes(char.id))
-                    .slice(0, 2)
-                    .map(character => (
-                      <Card key={character.id} className="bg-white/10">
-                        <CardContent className="p-4 text-white">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h4 className="font-bold">{character.name}</h4>
-                              <p className="text-sm opacity-75">Necesitas: Nivel {character.requiredLevel}</p>
-                              <p className="text-sm mt-2">{character.description}</p>
-                            </div>
-                            <div className="w-32 h-32 bg-white/20 rounded-lg overflow-hidden">
-                              <img 
-                                src={character.image} 
-                                alt={character.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-
-                  {unlockablePets
-                    .filter(pet => !progress?.unlockedPets.includes(pet.id))
-                    .slice(0, 2)
-                    .map(pet => (
-                      <Card key={pet.id} className="bg-white/10">
-                        <CardContent className="p-4 text-white">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h4 className="font-bold">{pet.name}</h4>
-                              <p className="text-sm opacity-75">Necesitas: Nivel {pet.requiredLevel}</p>
-                              <p className="text-sm mt-2">{pet.description}</p>
-                            </div>
-                            <div className="w-32 h-32 bg-white/20 rounded-lg overflow-hidden">
-                              <img 
-                                src={pet.image} 
-                                alt={pet.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
+                {/* Actividad especial de racha diaria */}
+                <Card className="bg-purple-900/20 border border-purple-500/30">
+                  <CardContent className="p-4 text-white">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-bold">¡Racha Diaria!</h4>
+                        <p className="text-sm opacity-75">
+                          +50 XP y {progress?.gems || 0} gemas
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm mb-1">
+                          Próxima recompensa en {7 - ((progress?.sessionStreak || 0) % 7)} días
+                        </p>
+                        <div className="w-32 bg-white/20 rounded-full h-2">
+                          <div
+                            className="bg-purple-400 h-2 rounded-full"
+                            style={{
+                              width: `${((progress?.sessionStreak || 0) % 7) * 14.28}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
 
@@ -517,7 +500,7 @@ export const AuthenticatedLandingPage = () => {
         <AppointmentModal
           isOpen={isAppointmentModalOpen}
           onClose={() => setIsAppointmentModalOpen(false)}
-          userId={JSON.parse(localStorage.getItem('isekaiUser') || '{}').id}
+          userId={JSON.parse(localStorage.getItem('user') || '{}').id}
         />
 
         {/* Modal de Ejercicios */}

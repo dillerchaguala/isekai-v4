@@ -6,7 +6,7 @@ interface LoginModalProps {
   onClose: () => void;
   mode: 'login' | 'register';
   onSwitchMode: (mode: 'login' | 'register') => void;
-  onLoginSuccess?: () => void;
+  onLoginSuccess?: (user: any, token: string) => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ 
@@ -38,16 +38,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       });
       const data = await res.json();
       if (res.ok) {
-        // Guardar token y datos del usuario en localStorage
-        localStorage.setItem('isekaiUser', JSON.stringify(data.user));
-        localStorage.setItem('isekaiToken', data.token);
-        
-        // Redirigir inmediatamente según el rol
-        if (data.user.role === "admin") {
-          window.location.href = "/administrador";
-        } else {
-          window.location.href = "/home";
-        }
+        // Guardar usuario y token con las claves correctas
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+        // Llamar al callback para que el padre maneje la redirección y el estado
+        if (onLoginSuccess) onLoginSuccess(data.user, data.token);
       } else {
         alert(data.message || 'Error al iniciar sesión');
       }
