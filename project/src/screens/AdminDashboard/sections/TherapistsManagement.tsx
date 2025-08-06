@@ -1,62 +1,39 @@
+
 import React, { useEffect, useState } from "react";
-import { Button } from "../../../components/ui/button";
 const API_BASE_URL = "http://localhost:4000/api";
 
-// Aquí podrías importar lógica de autenticación, API, etc.
-// import { useAuth } from '../../../lib/AuthContext';
-// import api from '../../../lib/api';
-
 const TherapistsManagement: React.FC = () => {
-  const [activities, setActivities] = useState<any[]>([]);
+  const [therapists, setTherapists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchActivities = async () => {
+    const fetchTherapists = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/community/activities/group`, {
+        const res = await fetch(`${API_BASE_URL}/auth/users`, {
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
           }
         });
-        if (!res.ok) throw new Error("No se pudo obtener la lista de actividades grupales");
+        if (!res.ok) throw new Error("No se pudo obtener la lista de usuarios");
         const data = await res.json();
-        setActivities(data);
+        setTherapists(data.filter((u: any) => u.role === 'therapist'));
       } catch (err: any) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-    fetchActivities();
+    fetchTherapists();
   }, []);
-
-  // Eliminar actividad grupal
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta actividad grupal?")) return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/community/activities/group/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-      if (!res.ok) throw new Error("No se pudo eliminar la actividad grupal");
-      setActivities(activities.filter(a => a._id !== id));
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
 
   return (
     <div className="text-white">
-      <h2 className="text-xl font-bold mb-4">Gestión de Actividades Grupales</h2>
+      <h2 className="text-xl font-bold mb-4">Gestión de Terapeutas</h2>
       {loading ? (
-        <p>Cargando actividades grupales...</p>
+        <p>Cargando terapeutas...</p>
       ) : error ? (
         <div className="bg-red-100 text-red-700 p-4 rounded mb-4">
           <strong>Error:</strong> {error}
@@ -67,31 +44,15 @@ const TherapistsManagement: React.FC = () => {
         <table className="w-full bg-[#183c4a] rounded-lg overflow-hidden">
           <thead>
             <tr className="bg-[#24506a] text-white">
-              <th className="p-2">Título</th>
-              <th className="p-2">Descripción</th>
-              <th className="p-2">Fecha</th>
-              <th className="p-2">Hora</th>
-              <th className="p-2">Duración</th>
-              <th className="p-2">Tipo</th>
-              <th className="p-2">Estado</th>
-              <th className="p-2">Acciones</th>
+              <th className="p-2">Nombre</th>
+              <th className="p-2">Email</th>
             </tr>
           </thead>
           <tbody>
-            {activities.map(activity => (
-              <tr key={activity._id} className="border-b border-[#24506a]">
-                <td className="p-2">{activity.title}</td>
-                <td className="p-2">{activity.description}</td>
-                <td className="p-2">{new Date(activity.date).toLocaleDateString()}</td>
-                <td className="p-2">{activity.time}</td>
-                <td className="p-2">{activity.duration}</td>
-                <td className="p-2">{activity.type}</td>
-                <td className="p-2">{activity.status}</td>
-                <td className="p-2">
-                  <Button variant="outline" className="text-red-500 border-red-500 hover:bg-red-500/10" onClick={() => handleDelete(activity._id)}>
-                    Eliminar
-                  </Button>
-                </td>
+            {therapists.map(therapist => (
+              <tr key={therapist._id} className="border-b border-[#24506a]">
+                <td className="p-2">{therapist.name}</td>
+                <td className="p-2">{therapist.email}</td>
               </tr>
             ))}
           </tbody>

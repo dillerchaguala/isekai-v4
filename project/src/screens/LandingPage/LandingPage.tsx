@@ -32,7 +32,6 @@ export const LandingPage = (): JSX.Element => {
   // Navigation menu items con onClick
   const navItems = [
     { text: "NOSOTROS", color: "text-[#ffef00]", onClick: () => navigate('/about') },
-    { text: "TIPOS DE TERAPIA", color: "text-[#ffef00]", onClick: () => navigate('/therapy-types') },
     userName
       ? { text: `¡Hola, ${userName}!`, color: "text-yellow-400 font-bold", onClick: () => navigate('/profile') }
       : { text: "INICIAR SESION", color: "text-white", onClick: () => { setLoginMode('login'); setLoginOpen(true); } },
@@ -168,7 +167,7 @@ export const LandingPage = (): JSX.Element => {
             <div className="flex flex-col md:flex-row items-center h-full px-4 md:px-8 w-full gap-4 md:gap-0">
               {/* Menú izquierdo */}
               <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-                {navItems.slice(0,2).map((item, index) => (
+                {navItems.slice(0,1).map((item, index) => (
                   <Button
                     key={`nav-${index}`}
                     variant="ghost"
@@ -185,7 +184,7 @@ export const LandingPage = (): JSX.Element => {
               </div>
               {/* Menú usuario a la derecha */}
               <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto md:ml-auto">
-                {navItems.slice(2).map((item, index) => (
+                {navItems.slice(1).map((item, index) => (
                   <Button
                     key={`user-nav-${index}`}
                     variant="ghost"
@@ -503,18 +502,32 @@ export const LandingPage = (): JSX.Element => {
           onClose={() => setLoginOpen(false)}
           mode={loginMode}
           onSwitchMode={setLoginMode}
-          onLoginSuccess={(userObj, token) => {
+          onLoginSuccess={async (userObj, token) => {
             setLoginOpen(false);
-            // Guardar usuario y token con las claves correctas
             localStorage.setItem('user', JSON.stringify(userObj));
             localStorage.setItem('token', token);
             let role = userObj?.role || '';
             let name = userObj?.name || '';
+            // Actualizar racha al iniciar sesión
+            if (role !== 'admin') {
+              try {
+                const res = await fetch('http://localhost:4000/api/progress/update-streak', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                // Puedes usar la respuesta para actualizar la UI de la barrita si lo necesitas
+              } catch (err) {
+                // Manejo de error opcional
+              }
+            }
             if (role === 'admin') {
               navigate('/administrador');
             } else {
               setUserName(name);
-              navigate('/home'); // Redirigir a apartado de usuario
+              navigate('/home');
             }
           }}
         />

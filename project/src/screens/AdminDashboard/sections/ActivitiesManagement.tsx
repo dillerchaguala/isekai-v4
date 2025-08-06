@@ -76,15 +76,15 @@ const ActivitiesManagement: React.FC = () => {
         Crear Nueva Actividad
       </Button>
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(15, 45, 52, 0.8)' }}>
-          <div className="relative w-full max-w-md mx-4 rounded-2xl shadow-2xl" style={{ backgroundColor: '#0F2D34' }}>
-            <div className="flex items-center justify-end p-6 border-b border-white/10">
+        <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(15, 45, 52, 0.85)' }}>
+          <div className="relative w-full max-w-lg mx-4 rounded-2xl shadow-2xl flex flex-col items-center justify-center" style={{ backgroundColor: '#0F2D34', top: '50%', transform: 'translateY(-10%)' }}>
+            <div className="flex items-center justify-end p-6 border-b border-white/10 w-full">
               <button
                 onClick={() => setShowModal(false)}
-                className="text-white hover:text-yellow-300 transition-colors"
+                className="text-white hover:bg-yellow-300/30 rounded-full p-1 transition-colors"
                 aria-label="Cerrar"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
             <div className="p-6">
@@ -106,19 +106,25 @@ const ActivitiesManagement: React.FC = () => {
                       },
                       body: JSON.stringify({ nombre: newNombre, descripcion: newDescripcion, xp: newXp })
                     });
-                    if (!res.ok) throw new Error("No se pudo crear la actividad");
+                    if (!res.ok) {
+                      const errData = await res.json().catch(() => ({}));
+                      setError(errData.message || "No se pudo crear la actividad");
+                      return;
+                    }
                     const nueva = await res.json();
                     setActivities([...activities, nueva]);
                     setShowModal(false);
                     setNewNombre("");
                     setNewDescripcion("");
                     setNewXp(0);
+                    setError(null);
                   } catch (err: any) {
-                    alert(err.message);
+                    setError(err.message || "Error desconocido");
                   }
                 }}
                 className="space-y-4"
               >
+                {error && <div className="bg-red-100 text-red-700 p-2 rounded mb-2 text-center">{error}</div>}
                 <div>
                   <label className="block text-white text-sm font-medium mb-2">Nombre de la actividad</label>
                   <input

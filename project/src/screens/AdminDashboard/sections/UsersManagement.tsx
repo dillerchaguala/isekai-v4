@@ -56,65 +56,41 @@ const UsersManagement: React.FC = () => {
   };
 
   return (
-    <div className="text-white">
+    <div className="text-white w-full max-w-7xl mx-auto px-2 sm:px-4">
       <h2 className="text-xl font-bold mb-4">Gestión de Usuarios</h2>
       {loading ? (
-        <p>Cargando usuarios...</p>
+        <p className="text-center">Cargando usuarios...</p>
       ) : error ? (
-        <div className="bg-red-100 text-red-700 p-4 rounded mb-4">
+        <div className="bg-red-100 text-red-700 p-4 rounded mb-4 text-center">
           <strong>Error:</strong> {error}
           <br />
           Verifica que el backend esté corriendo y los endpoints respondan correctamente.
         </div>
       ) : (
-        <table className="w-full bg-[#183c4a] rounded-lg overflow-hidden">
-          <thead>
-            <tr className="bg-[#24506a] text-white">
-              <th className="p-2">Nombre</th>
-              <th className="p-2">Email</th>
-              <th className="p-2">Rol</th>
-              <th className="p-2">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user._id} className="border-b border-[#24506a]">
-                <td className="p-2">{user.name}</td>
-                <td className="p-2">{user.email}</td>
-                <td className="p-2">
-                  <span className={`px-2 py-1 rounded ${user.role === 'admin' ? 'bg-purple-600' : user.role === 'therapist' ? 'bg-green-600' : 'bg-blue-600'} text-white`}>
-                    {user.role}
-                  </span>
-                </td>
-                <td className="p-2 flex gap-2">
-                  <Button variant="outline" className="text-red-500 border-red-500 hover:bg-red-500/10" onClick={() => handleDelete(user._id)}>
-                    Eliminar
-                  </Button>
-                  {user.role !== 'therapist' && (
-                    <Button variant="outline" className="text-green-500 border-green-500 hover:bg-green-500/10" onClick={async () => {
-                      const token = localStorage.getItem('token');
-                      const res = await fetch(`${API_BASE_URL}/auth/users/${user._id}/role`, {
-                        method: 'PATCH',
-                        headers: {
-                          'Authorization': `Bearer ${token}`,
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ role: 'therapist' })
-                      });
-                      if (res.ok) {
-                        setUsers(users.map(u => u._id === user._id ? { ...u, role: 'therapist' } : u));
-                      } else {
-                        alert('No se pudo asignar el rol de terapeuta');
-                      }
-                    }}>
-                      Asignar Terapeuta
-                    </Button>
-                  )}
-                </td>
+        <div className="overflow-x-auto w-full">
+          <table className="w-full bg-[#183c4a] rounded-lg overflow-hidden text-xs sm:text-sm md:text-base">
+            <thead>
+              <tr className="bg-[#24506a] text-white">
+                <th className="p-2 min-w-[100px]">Nombre</th>
+                <th className="p-2 min-w-[120px]">Email</th>
+                <th className="p-2 min-w-[80px]">Rol</th>
+                <th className="p-2 min-w-[100px]">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map(user => (
+                <tr key={user._id} className="border-b border-[#24506a] hover:bg-[#20425a] transition-colors">
+                  <td className="p-2 break-words">{user.name}</td>
+                  <td className="p-2 break-words">{user.email}</td>
+                  <td className="p-2 break-words">{user.role}</td>
+                  <td className="p-2">
+                    <button onClick={() => handleDelete(user._id)} className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors">Eliminar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

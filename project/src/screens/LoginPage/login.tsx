@@ -1,6 +1,9 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../lib/api";
+import { useAuth } from "../../lib/AuthContext";
+
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -8,6 +11,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { user } = useAuth();
+
+  // Si ya está autenticado y es admin, redirigir automáticamente
+  useEffect(() => {
+    if (user && user.role === "admin") {
+      navigate("/administrador", { replace: true });
+    }
+  }, [user, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -16,16 +27,13 @@ export default function LoginPage() {
     try {
       const res = await loginUser({ email, password });
       if (res.token) {
-        // Guardar usuario y token en localStorage con las claves correctas
         localStorage.setItem("user", JSON.stringify(res.user));
         localStorage.setItem("token", res.token);
-        // Mostrar el rol guardado en consola para depuración
         console.log("Usuario logueado:", res.user);
-        // Forzar la redirección y recargar para asegurar que se apliquen los cambios
         if (res.user.role === "admin") {
-          window.location.href = "/administrador";
+          navigate("/administrador", { replace: true });
         } else {
-          window.location.href = "/home";
+          navigate("/home", { replace: true });
         }
       } else {
         setError(res.message || "Credenciales incorrectas");

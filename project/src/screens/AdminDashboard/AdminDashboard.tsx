@@ -15,49 +15,53 @@ import { useAuth } from '../../lib/AuthContext';
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { isAdmin } = useAuth();
+  const { isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAdmin()) {
-      navigate('/login');
+      navigate('/');
     }
   }, [isAdmin, navigate]);
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-[url(/rectangle-119.png)] bg-cover bg-[50%_50%]">
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-[#0f2d34cc] backdrop-blur-md rounded-3xl p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-white">Panel de Administración</h1>
-            <div className="flex gap-4">
-              <Button variant="outline" className="text-white border-white hover:bg-white/10">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-8">
+        <div className="bg-[#0f2d34cc] backdrop-blur-md rounded-3xl p-4 sm:p-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white text-center sm:text-left">Panel de Administración</h1>
+            <div className="flex gap-2 w-full sm:w-auto justify-center sm:justify-end">
+              <Button className="bg-[#183c4a] text-white border border-white hover:bg-[#24506a] w-full sm:w-auto">
                 Exportar Datos
               </Button>
-              <Button className="bg-purple-500 hover:bg-purple-600 text-white">
-
-                Nueva Actividad
+              <Button onClick={handleLogout} className="bg-[#24506a] text-white border border-white hover:bg-[#183c4a] w-full sm:w-auto">
+                Cerrar sesión
               </Button>
             </div>
           </div>
 
           <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-white/10 p-1">
+            <TabsList className="bg-white/10 p-1 flex overflow-x-auto whitespace-nowrap rounded-lg">
               <TabsTrigger 
                 value="dashboard"
-                className="text-white data-[state=active]:bg-white/20"
+                className="text-white data-[state=active]:bg-white/20 min-w-[120px]"
               >
                 Dashboard
               </TabsTrigger>
               <TabsTrigger 
                 value="users"
-                className="text-white data-[state=active]:bg-white/20"
+                className="text-white data-[state=active]:bg-white/20 min-w-[120px]"
               >
                 Usuarios
               </TabsTrigger>
               <TabsTrigger 
                 value="activities"
-                className="text-white data-[state=active]:bg-white/20"
+                className="text-white data-[state=active]:bg-white/20 min-w-[120px]"
               >
                 Actividades
               </TabsTrigger>
