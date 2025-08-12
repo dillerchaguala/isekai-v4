@@ -15,19 +15,84 @@ import { useAuth } from '../../lib/AuthContext';
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { isAdmin, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(true);
+  
   useEffect(() => {
-    if (!isAdmin()) {
+    const checkAuth = async () => {
+      try {
+        // Verificar si hay un token y usuario en localStorage
+        const token = localStorage.getItem('token');
+        const savedUser = localStorage.getItem('user');
+        
+        if (!token || !savedUser) {
+          throw new Error('No hay token o usuario');
+        }
+
+        const user = JSON.parse(savedUser);
+        if (user.role !== 'admin') {
+          throw new Error('Usuario no es administrador');
+        }
+
+        // Verificar token con el backend
+        const response = await fetch('http://localhost:4000/api/auth/validate', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Token inválido');
+        }
+
+        // Si todo está bien, quitamos el loading
+        setLoading(false);
+      } catch (error) {
+        console.error('Error de autenticación:', error);
+        // Limpiar localStorage y redirigir
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/');
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // Intenta hacer logout en el backend primero
+      await fetch('http://localhost:4000/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    } finally {
+      // Siempre ejecutar el logout local y la navegación
+      logout();
+      setLoading(true); // Reseteamos el estado de loading
       navigate('/');
     }
-  }, [isAdmin, navigate]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[url(/rectangle-119.png)] bg-cover bg-[50%_50%] flex items-center justify-center">
+        <div className="bg-[#0f2d34cc] backdrop-blur-md rounded-3xl p-8">
+          <p className="text-xl text-white">Cargando panel de administración...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[url(/rectangle-119.png)] bg-cover bg-[50%_50%]">

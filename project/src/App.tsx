@@ -26,7 +26,6 @@ export const App = () => {
           <Route path="/home" element={<AuthenticatedLandingPage />} />
           <Route path="/about" element={<AboutUsPage />} />
           <Route path="/welcome" element={<WelcomePage />} />
-          <Route path="/admin-appointments" element={<AdminDashboard />} />
           <Route path="/administrador" element={<AdminDashboard />} />
           <Route path="/appointments" element={<AppointmentsList />} />
           <Route path="/characters" element={<CharactersPage />} />

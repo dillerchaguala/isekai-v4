@@ -22,13 +22,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Recuperar la sesión al cargar la página
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
+    const validateSession = async () => {
+      try {
+        const savedToken = localStorage.getItem('token');
+        const savedUser = localStorage.getItem('user');
+        
+        if (!savedToken || !savedUser) {
+          return;
+        }
+
+        // Validar el token con el backend
+        const response = await fetch('http://localhost:4000/api/auth/validate', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${savedToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Sesión inválida');
+        }
+
+        // Si la validación es exitosa, establecer el estado
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error('Error al validar sesión:', error);
+        // Si hay error, limpiar todo
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    };
+
+    validateSession();
   }, []);
 
   const login = (newToken: string, userData: User) => {
